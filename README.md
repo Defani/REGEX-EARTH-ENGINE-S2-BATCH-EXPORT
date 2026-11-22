@@ -2,6 +2,19 @@
 
 **Tutorial Teknis Berbasis Literatur**
 
+![Google Earth Engine](https://img.shields.io/badge/Google_Earth_Engine-4285F4?style=for-the-badge&logo=googleearthengine&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Sentinel-2](https://img.shields.io/badge/Sentinel--2_L2A-0B3D91?style=for-the-badge)
+![Cloud Score+](https://img.shields.io/badge/Cloud_Score%2B-34A853?style=for-the-badge)
+![Regex](https://img.shields.io/badge/Regex-C0392B?style=for-the-badge)
+![Google Drive](https://img.shields.io/badge/Google_Drive-4285F4?style=for-the-badge&logo=googledrive&logoColor=white)
+![LaTeX](https://img.shields.io/badge/LaTeX-008080?style=for-the-badge&logo=latex&logoColor=white)
+![Markdown](https://img.shields.io/badge/Markdown-000000?style=for-the-badge&logo=markdown&logoColor=white)
+
+![Bahasa](https://img.shields.io/badge/Bahasa-Indonesia-red?style=flat-square)
+![Jenis](https://img.shields.io/badge/Jenis-Tutorial_Teknis-orange?style=flat-square)
+![Diperbarui](https://img.shields.io/badge/Diperbarui-2026--11--22-blue?style=flat-square)
+
 **Penulis:** Defani Arman Alfitriansyah
 
 ---
@@ -11,6 +24,21 @@
 Dokumen ini membahas pemanfaatan *regular expression* (regex) untuk memilih band citra Sentinel-2 secara otomatis pada Google Earth Engine (GEE), sehingga daftar nama band tidak perlu ditulis satu per satu. Regex diuraikan secara formal sebagai himpunan pola atas suatu alfabet, kemudian diterapkan pada himpunan nama band untuk menghasilkan himpunan bagian band terpilih. Hasil seleksi dipakai untuk mengekspor citra komposit median, satu band satu berkas GeoTIFF, melalui iterasi otomatis. Sebagai penyaring kualitas piksel pada komposit, digunakan produk **Cloud Score+ (CS+)**; landasan ilmiahnya dijelaskan tersendiri pada **Bab 6** berdasarkan Pasquarella *et al.* (2023).
 
 **Kata kunci:** regular expression, Sentinel-2, Google Earth Engine, seleksi band, komposit median, Cloud Score+.
+
+---
+
+## Tech Stack
+
+| Komponen | Peran dalam tutorial |
+|---|---|
+| ![GEE](https://img.shields.io/badge/Google_Earth_Engine-4285F4?style=flat-square&logo=googleearthengine&logoColor=white) | Platform pengolahan citra satelit berbasis awan (Code Editor) |
+| ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black) | Bahasa skrip GEE sisi klien (`evaluate`, `forEach`) |
+| ![S2](https://img.shields.io/badge/COPERNICUS%2FS2__SR__HARMONIZED-0B3D91?style=flat-square) | Citra Sentinel-2 level 2A (*surface reflectance*) |
+| ![CS+](https://img.shields.io/badge/GOOGLE%2FCLOUD__SCORE__PLUS-34A853?style=flat-square) | Band `cs_cdf` untuk masker kualitas piksel |
+| ![Regex](https://img.shields.io/badge/Regex-C0392B?style=flat-square) | Seleksi band otomatis, misalnya `B.*` |
+| ![Drive](https://img.shields.io/badge/Google_Drive-4285F4?style=flat-square&logo=googledrive&logoColor=white) | Tujuan ekspor GeoTIFF per band (10 m, EPSG:4326) |
+| ![LaTeX](https://img.shields.io/badge/LaTeX-008080?style=flat-square&logo=latex&logoColor=white) | Penulisan rumus (sintaks `$$ ... $$`) |
+| ![Markdown](https://img.shields.io/badge/Markdown-000000?style=flat-square&logo=markdown&logoColor=white) | Format dokumen |
 
 ---
 
@@ -62,7 +90,7 @@ Materi utama adalah regex dan penerapannya (Bab 2 sampai 5). Bab 6 bersifat pend
 
 ### 2.1 Definisi formal
 
-Misalkan $\Sigma$ adalah alfabet (himpunan karakter yang diizinkan) dan $\Sigma^{*}$ adalah himpunan semua string hingga atas $\Sigma$, termasuk string kosong $\varepsilon$. Sebuah *regular expression* $\pi$ mendefinisikan suatu himpunan string, yang disebut bahasa $L(\pi) \subseteq \Sigma^{*}$. String $s$ dikatakan **cocok** dengan $\pi$ apabila $s \in L(\pi)$:
+Misalkan $\Sigma$ adalah alfabet (himpunan karakter yang diizinkan) dan $\Sigma^\ast$ adalah himpunan semua string hingga atas $\Sigma$, termasuk string kosong $\varepsilon$. Sebuah *regular expression* $\pi$ mendefinisikan suatu himpunan string, yang disebut bahasa $L(\pi) \subseteq \Sigma^\ast$. String $s$ dikatakan **cocok** dengan $\pi$ apabila $s \in L(\pi)$:
 
 $$
 m_{\pi}(s) =
@@ -70,7 +98,7 @@ m_{\pi}(s) =
 1, & s \in L(\pi) \\
 0, & \text{lainnya}
 \end{cases}
-\tag{R-1}
+\qquad \text{(R-1)}
 $$
 
 Konsep regex berakar pada teori himpunan reguler yang diperkenalkan Kleene (1956) (Pustaka 1), dan algoritma pencarian berbasis automata hingga untuk regex dipublikasikan oleh Thompson (1968) (Pustaka 2).
@@ -81,23 +109,23 @@ Bahasa suatu regex dibangun secara rekursif dari tiga operasi himpunan: gabungan
 
 $$
 \begin{aligned}
-L(a) &= \{a\}, \quad a \in \Sigma \\
+L(a) &= \lbrace a \rbrace, \quad a \in \Sigma \\
 L(\pi_1 \mid \pi_2) &= L(\pi_1) \cup L(\pi_2) \\
-L(\pi_1 \pi_2) &= L(\pi_1) \cdot L(\pi_2) = \{\, uv : u \in L(\pi_1),\ v \in L(\pi_2) \,\} \\
-L(\pi^{*}) &= \bigcup_{k=0}^{\infty} L(\pi)^{k}
+L(\pi_1 \pi_2) &= L(\pi_1) \cdot L(\pi_2) = \lbrace uv : u \in L(\pi_1),\ v \in L(\pi_2) \rbrace \\
+L(\pi^{\ast}) &= \bigcup_{k=0}^{\infty} L(\pi)^{k}
 \end{aligned}
-\tag{R-2}
+\qquad \text{(R-2)}
 $$
 
-dengan $L(\pi)^{0} = \{\varepsilon\}$. Operator tambahan yang praktis dapat diturunkan dari ketiganya:
+dengan $L(\pi)^{0} = \lbrace \varepsilon \rbrace$. Operator tambahan yang praktis dapat diturunkan dari ketiganya:
 
 $$
 \begin{aligned}
-L(\texttt{.}) &= \Sigma \\
-L(\pi\texttt{?}) &= L(\pi) \cup \{\varepsilon\} \\
-L(\texttt{[}x\texttt{-}y\texttt{]}) &= \{\, c \in \Sigma : x \le c \le y \,\}
+L(\mathtt{.}) &= \Sigma \\
+L(\pi\mathtt{?}) &= L(\pi) \cup \lbrace \varepsilon \rbrace \\
+L([x\text{-}y]) &= \lbrace c \in \Sigma : x \le c \le y \rbrace
 \end{aligned}
-\tag{R-3}
+\qquad \text{(R-3)}
 $$
 
 ### 2.3 Operator yang dipakai pada GEE
@@ -106,7 +134,7 @@ Dokumentasi `ee.Image.select` menyatakan bahwa band dapat dipilih berdasarkan na
 
 | Operator | Arti | Contoh | Himpunan string cocok |
 |---|---|---|---|
-| literal | karakter itu sendiri | `B` | $\{\texttt{B}\}$ |
+| literal | karakter itu sendiri | `B` | hanya string `B` |
 | `.` | satu karakter sembarang | `B.` | `B1`, `B2`, ... (dua karakter berawalan B) |
 | `*` | nol atau lebih pengulangan | `B.*` | semua string berawalan `B` |
 | `?` | nol atau satu kali | `B..?` | string berawalan `B` dengan dua atau tiga karakter |
@@ -140,22 +168,22 @@ Pengguna yang terbiasa dengan pola nama berkas (misalnya `B*` untuk semua berkas
 Misalkan $\mathcal{B}$ adalah himpunan nama band pada citra. Seleksi dengan pola $\pi$ menghasilkan himpunan bagian:
 
 $$
-\mathcal{B}_{\pi} = \{\, b \in \mathcal{B} \ :\ m_{\pi}(b) = 1 \,\}
-\tag{R-4}
+\mathcal{B}_{\pi} = \lbrace b \in \mathcal{B} : m_{\pi}(b) = 1 \rbrace
+\qquad \text{(R-4)}
 $$
 
 Untuk pola `B.*`, bahasanya adalah penyambungan huruf `B` dengan string apa pun:
 
 $$
-L(\texttt{B.*}) = \{\texttt{B}\} \cdot \Sigma^{*}
-\tag{R-5}
+L(\mathtt{B.\ast}) = \lbrace \mathtt{B} \rbrace \cdot \Sigma^{\ast}
+\qquad \text{(R-5)}
 $$
 
 Pada citra Sentinel-2 L2A, himpunan terpilih adalah band spektral:
 
 $$
-\mathcal{B}_{\texttt{B.*}} = \{\texttt{B1}, \texttt{B2}, \texttt{B3}, \texttt{B4}, \texttt{B5}, \texttt{B6}, \texttt{B7}, \texttt{B8}, \texttt{B8A}, \texttt{B9}, \texttt{B11}, \texttt{B12}\}, \qquad |\mathcal{B}_{\texttt{B.*}}| = 12
-\tag{R-6}
+\mathcal{B}_{\mathtt{B.\ast}} = \lbrace \mathtt{B1}, \mathtt{B2}, \mathtt{B3}, \mathtt{B4}, \mathtt{B5}, \mathtt{B6}, \mathtt{B7}, \mathtt{B8}, \mathtt{B8A}, \mathtt{B9}, \mathtt{B11}, \mathtt{B12} \rbrace, \qquad \left| \mathcal{B}_{\mathtt{B.\ast}} \right| = 12
+\qquad \text{(R-6)}
 $$
 
 Band lain seperti `AOT`, `WVP`, `SCL`, dan `TCI_R` tidak termasuk karena nama-nama tersebut tidak diawali huruf `B` (dokumentasi `S2_SR_HARMONIZED` memuat 12 band spektral dan beberapa band khusus L2; Pustaka 5).
@@ -198,8 +226,8 @@ Cara ini juga membantu menangkap kesalahan pola, karena regex yang salah tidak s
 Setiap band terpilih memetakan ke satu tugas ekspor $E_b$. Himpunan tugas yang dibentuk adalah:
 
 $$
-\mathcal{E} = \{\, E_b \ :\ b \in \mathcal{B}_{\pi} \,\}, \qquad |\mathcal{E}| = |\mathcal{B}_{\pi}|
-\tag{R-7}
+\mathcal{E} = \lbrace E_b : b \in \mathcal{B}_{\pi} \rbrace, \qquad |\mathcal{E}| = |\mathcal{B}_{\pi}|
+\qquad \text{(R-7)}
 $$
 
 Untuk pola `B.*` pada L2A, terbentuk 12 tugas. Mengubah pola otomatis mengubah jumlah tugas tanpa menyunting kode lain.
@@ -228,10 +256,10 @@ Misalkan $i$ menandai piksel, $t$ tanggal akuisisi pada himpunan $T$ (hasil filt
 $$
 M_t(i) =
 \begin{cases}
-1, & \mathrm{CS}^{+}_{\mathrm{cdf},t}(i) \ge \tau \\[4pt]
+1, & \mathrm{CS}^{+}_{\mathrm{cdf},t}(i) \ge \tau \\
 0, & \text{lainnya}
 \end{cases}
-\tag{P-1}
+\qquad \text{(P-1)}
 $$
 
 Pada skrip, $\tau = 0{,}60$ (operasi `.gte(0.60)`).
@@ -240,14 +268,14 @@ Pada skrip, $\tau = 0{,}60$ (operasi `.gte(0.60)`).
 
 $$
 \rho_{b,t}(i) = 0{,}0001 \times \mathrm{DN}_{b,t}(i)
-\tag{P-2}
+\qquad \text{(P-2)}
 $$
 
 **Komposit median** dari piksel yang lolos masker, untuk tiap band $b \in \mathcal{B}_{\pi}$:
 
 $$
-\tilde{\rho}_b(i) = \operatorname*{median}_{t \in T}\Big\{\, \rho_{b,t}(i)\ :\ M_t(i) = 1 \,\Big\}
-\tag{P-3}
+\tilde{\rho}_b(i) = \underset{t \in T}{\operatorname{median}} \lbrace \rho_{b,t}(i) : M_t(i) = 1 \rbrace
+\qquad \text{(P-3)}
 $$
 
 Median bersifat tahan terhadap nilai pencilan, sehingga sisa awan tipis dan bayangan yang lolos masker cenderung tertekan.
@@ -336,7 +364,7 @@ Skor kualitas didefinisikan pada rentang $[0, 1]$. Piksel terekam $p_m$ dimodelk
 
 $$
 \mathrm{QA}(p_m) = q, \qquad p_m = p_t\,q + c\,(1 - q)
-\tag{C-1}
+\qquad \text{(C-1)}
 $$
 
 "Reflektansi sebenarnya" adalah reflektansi puncak atmosfer pada kondisi kedalaman optik minimum. Karena modelnya linear, kombinasi linear dua piksel yang skornya diketahui menghasilkan piksel dengan skor berupa kombinasi linear skor keduanya. Sifat ini dimanfaatkan pada tahap *fine-tuning* melalui teknik *mixup*.
@@ -346,15 +374,15 @@ $$
 Mengestimasi kemiripan atmosferik antara dua citra lebih mudah daripada mengestimasi kualitas satu citra secara langsung. ASIM untuk piksel ke-$i$ pada citra $x$ dan $y$ didefinisikan sebagai QA minimum di antara keduanya (Pers. 2 pada makalah):
 
 $$
-\mathrm{ASIM}_i(x_i, y_i) := \min_{p \in \{x_i,\, y_i\}} \mathrm{QA}(p)
-\tag{C-2}
+\mathrm{ASIM}_i(x_i, y_i) := \min_{p \in \lbrace x_i,\, y_i \rbrace} \mathrm{QA}(p)
+\qquad \text{(C-2)}
 $$
 
 Jika $r$ adalah citra referensi bebas gangguan, maka $\mathrm{QA}(r) = 1$ sehingga:
 
 $$
 \mathrm{ASIM}(x, r) = \mathrm{QA}(x)
-\tag{C-3}
+\qquad \text{(C-3)}
 $$
 
 Dengan citra referensi yang bersih, skor kualitas citra $x$ dapat diperoleh langsung dari ASIM. Prinsip ini dipakai untuk membangun data latih secara *bootstrapping*: model ASIM menemukan pasangan citra bersih pada deret waktu, lalu skor QA tiap citra dihitung terhadap referensi terdekat. Pasangan dianggap referensi jernih bila $\mu - \sigma > 0{,}75$. Proses ini menghasilkan 2,2 juta rangkaian video untuk tahun 2018 sampai 2021.
@@ -365,28 +393,32 @@ Seluruh masukan model ditransformasi logaritmik untuk menekan ekor panjang refle
 
 $$
 x' = \frac{\log(x + 1)}{10}
-\tag{C-4}
+\qquad \text{(C-4)}
 $$
 
 Transformasi ini menormalkan masukan ke rentang sekitar $[0,\ 1{,}1]$.
 
 ### 6.5 Fungsi kerugian kemungkinan maksimum
 
-Model memprediksi rerata dan log-varians $(\mu, \log\sigma^2)$ dari skor QA. Parameter dioptimalkan dengan meminimalkan log-likelihood teregularisasi (Pers. 4 sampai 6 pada makalah):
+Model memprediksi rerata dan log-varians $(\mu, \log\sigma^2)$ dari skor QA. Parameter dioptimalkan dengan meminimalkan log-likelihood teregularisasi (Pers. 4 sampai 6 pada makalah). Pertama, log-varians dibatasi (di-*clip*) pada rentang $[a, b]$:
 
 $$
-z = \log\sigma^2 \Big|_{[a,\,b]}
-\tag{C-5}
+z = \min\left( \max\left( \log\sigma^2,\ a \right),\ b \right)
+\qquad \text{(C-5)}
 $$
 
-$$
-r = \left(z - \log\sigma^2\right)^2
-\tag{C-6}
-$$
+Kemudian suku regularisasi dihitung:
 
 $$
-l = \left(\log 2\pi + z + \frac{(\mu' - \mu)^2}{e^{z}}\right)\frac{1}{2} + r
-\tag{C-7}
+r = \left( z - \log\sigma^2 \right)^2
+\qquad \text{(C-6)}
+$$
+
+Kerugian akhirnya:
+
+$$
+l = \frac{1}{2}\left( \log 2\pi + z + \frac{(\mu' - \mu)^2}{e^{z}} \right) + r
+\qquad \text{(C-7)}
 $$
 
 dengan $\mu'$ skor QA acuan, domain $z$ dibatasi pada $[a, b]$ dengan $a = -16$ dan $b = 5$ demi stabilitas numerik, dan $r$ ditambahkan untuk mencegah dataran gradien.
@@ -396,15 +428,15 @@ dengan $\mu'$ skor QA acuan, domain $z$ dibatasi pada $[a, b]$ dengan $a = -16$ 
 Model QA bersifat multi-tugas. Yang dipublikasikan sebagai produk CS+ adalah estimasi **persentil** skor QA, dilatih dengan meminimalkan (Pers. 7 pada makalah):
 
 $$
-\mathcal{L}_p = \Big( p(x, \theta) - \mathbb{1}\big[\mathrm{QA}_\mu(x) \ge \mathrm{QA}_\mu(y)\big] \Big)^2
-\tag{C-8}
+\mathcal{L}_p = \left( p(x, \theta) - \mathbf{1}\left[ \mathrm{QA}_\mu(x) \ge \mathrm{QA}_\mu(y) \right] \right)^2
+\qquad \text{(C-8)}
 $$
 
 Karena $x$ dan $y$ diambil dari sebaran yang sama pada lokasi tertentu, ekspektasi indikator tersebut adalah **fungsi sebaran kumulatif** (CDF) QA untuk citra $x$:
 
 $$
-\mathbb{E}\Big[\mathbb{1}\big[\mathrm{QA}_\mu(x) \ge \mathrm{QA}_\mu(y)\big]\Big] = F_{\mathrm{QA}}\big(\mathrm{QA}_\mu(x)\big)
-\tag{C-9}
+\mathbb{E}\left[ \mathbf{1}\left[ \mathrm{QA}_\mu(x) \ge \mathrm{QA}_\mu(y) \right] \right] = F_{\mathrm{QA}}\left( \mathrm{QA}_\mu(x) \right)
+\qquad \text{(C-9)}
 $$
 
 Secara praktis, nilai CS+ menyatakan posisi relatif kejernihan piksel dibandingkan pengamatan lain pada lokasi yang sama.
@@ -414,8 +446,8 @@ Secara praktis, nilai CS+ menyatakan posisi relatif kejernihan piksel dibandingk
 Pada inferensi, citra dibagi menjadi sub-*tile*, dan tiap sub-*tile* memperoleh himpunan citra pendukung (maksimum 16) yang dapat berbeda sehingga menimbulkan sambungan (*seam*) visual. Untuk meredamnya, dilakukan optimasi global terhadap *gain* dan *bias* $(\gamma, \beta)$ pada empat titik kontrol per sub-*tile* dengan interpolasi bilinear, dengan $\mu' = \gamma\mu + \beta$ dan $\sigma' = \gamma\sigma$ (Pers. 8 pada makalah):
 
 $$
-\min_{\gamma,\beta}\ \lambda\left(\sum_{T}\big[(\gamma_T - 1)^2 + \beta_T^2\big]\right) + \sum_{i}\big(\gamma_{Q_i} Q_i + \beta_{Q_i} - \gamma_{P_i} P_i - \beta_{P_i}\big)^2
-\tag{C-10}
+\min_{\gamma,\beta}\ \lambda \sum_{T} \left[ (\gamma_T - 1)^2 + \beta_T^2 \right] + \sum_{i} \left( \gamma_{Q_i} Q_i + \beta_{Q_i} - \gamma_{P_i} P_i - \beta_{P_i} \right)^2
+\qquad \text{(C-10)}
 $$
 
 dengan $\lambda = 1$, serta $P$ dan $Q$ adalah skor rerata dua sub-*tile* bersebelahan sepanjang sambungan. Menurut penulis, koreksi ini tidak berpengaruh signifikan pada validasi tetapi mengurangi artefak visual secara nyata.
@@ -475,7 +507,7 @@ Menurut Pasquarella *et al.* (2023), kelemahan CS+ yang diketahui meliputi detek
 
 | Simbol | Keterangan |
 |---|---|
-| $\Sigma$, $\Sigma^{*}$ | Alfabet karakter dan himpunan semua string atasnya |
+| $\Sigma$, $\Sigma^\ast$ | Alfabet karakter dan himpunan semua string atasnya |
 | $\varepsilon$ | String kosong |
 | $\pi$ | Pola regex |
 | $L(\pi)$ | Bahasa (himpunan string cocok) dari pola $\pi$ |
@@ -529,3 +561,5 @@ https://developers.google.com/earth-engine/apidocs/ee-imagecollection-select
 ---
 
 > **Catatan penulisan.** Persamaan C-1 sampai C-10 dan nilai pada Tabel 6.1 dan 6.2 bersumber dari Pasquarella *et al.* (2023). Persamaan R-1 sampai R-7 dan P-1 sampai P-3 adalah formulasi penulis tutorial untuk mendeskripsikan regex dan operasi pada skrip, dan bukan bagian dari makalah tersebut. Operator dan contoh pola regex mengacu pada dokumentasi GEE (Pustaka 7 dan 8); asumsi pencocokan penuh perlu diverifikasi dengan `print(...bandNames())`.
+>
+> **Catatan format rumus.** Rumus ditulis dengan blok `$$ ... $$` dan rumus sebaris `$ ... $` (kompatibel dengan GitHub, VS Code, Obsidian, dan Typora). Label persamaan ditulis dengan `\text{(R-1)}` di akhir rumus, bukan `\tag{}`, agar tidak gagal dirender di GitHub.
