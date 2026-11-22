@@ -559,7 +559,3 @@ https://developers.google.com/earth-engine/apidocs/ee-image-select
 https://developers.google.com/earth-engine/apidocs/ee-imagecollection-select
 
 ---
-
-> **Catatan penulisan.** Persamaan C-1 sampai C-10 dan nilai pada Tabel 6.1 dan 6.2 bersumber dari Pasquarella *et al.* (2023). Persamaan R-1 sampai R-7 dan P-1 sampai P-3 adalah formulasi penulis tutorial untuk mendeskripsikan regex dan operasi pada skrip, dan bukan bagian dari makalah tersebut. Operator dan contoh pola regex mengacu pada dokumentasi GEE (Pustaka 7 dan 8); asumsi pencocokan penuh perlu diverifikasi dengan `print(...bandNames())`.
->
-> **Catatan format rumus.** Rumus ditulis dengan blok `$$ ... $$` dan rumus sebaris `$ ... $` (kompatibel dengan GitHub, VS Code, Obsidian, dan Typora). Label persamaan ditulis dengan `\text{(R-1)}` di akhir rumus, bukan `\tag{}`, agar tidak gagal dirender di GitHub.
